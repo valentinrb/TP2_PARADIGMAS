@@ -6,32 +6,18 @@ public class NetworkManager (
     private val routers: List<Router>,
     private var connections: List<Connection>
 ) {
-    fun initTransmission(page: Page) {
-        val sourceRouter = routers.random()
+    fun initTransmission(sourceRouter: Router, page: Page) {
         var destRouter = routers.random()
 
         while (sourceRouter == destRouter)
             destRouter = routers.random()
 
-        println("Routers 'src' 'dst': ${sourceRouter.getIp()} -> ${destRouter.getIp()}")
+        //println("Page ${page.getId()} - SourceRouter ${sourceRouter.getIp()}")
 
-        val path = findShortestPath(sourceRouter, destRouter)
-            ?: throw NullPointerException("El camino más corto no se encontró")
-
-        path.forEachIndexed { index, router ->
-            print(router.getIp())
-        
-            if (index < path.size - 1) {
-                print(" -> ")
-            } else {
-                println()
-            }
-        }
-
-        sourceRouter.sendPage(page, destRouter, path)
+        sourceRouter.createPackages(page, destRouter)
     }
 
-    fun findShortestPath(sourceRouter: Router, destinationRouter: Router): List<Router>? {
+    fun findShortestPath(sourceRouter: Router, destinationRouter: Router): Path {
         val distances = HashMap<Router, UInt>()
         val visited = HashSet<Router>()
         val queue = PriorityQueue<Router>(compareBy { distances.getOrDefault(it, UInt.MAX_VALUE) })
@@ -44,7 +30,7 @@ public class NetworkManager (
             val currentRouter = queue.poll()
     
             if (currentRouter == destinationRouter)
-                return buildPath(destinationRouter, previous)
+                return buildPath(destinationRouter, previous, sourceRouter)
     
             if (visited.contains(currentRouter)) continue
     
@@ -63,13 +49,14 @@ public class NetworkManager (
             }
         }
     
-        return null
+        throw NoSuchElementException("No se encontró un camino entre $sourceRouter y $destinationRouter")
     }
     
     private fun buildPath(
         destination: Router,
-        previous: HashMap<Router, Router?>
-    ): List<Router> {
+        previous: HashMap<Router, Router?>,
+        sourceRouter: Router
+    ): Path {
         val path = mutableListOf<Router>()
         var current: Router? = destination
     
@@ -77,8 +64,8 @@ public class NetworkManager (
             path.add(current)
             current = previous[current]
         }
-    
-        return path.reversed()
+        
+        return Path(sourceRouter.getIp(), destination.getIp(), path.reversed().toMutableList())
     }
 
     fun printNetwork() {

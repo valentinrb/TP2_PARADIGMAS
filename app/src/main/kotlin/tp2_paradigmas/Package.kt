@@ -12,4 +12,10 @@ public class Package (
     fun getData() = data
     fun getSource() = source
     fun getDestiny() = destiny
+
+    fun printPackage() {
+        println("Package ID: $id")
+        println("Source Router: ${source.getIp()}")
+        println("Destiny Router: ${destiny.getIp()}")
+    }
 }

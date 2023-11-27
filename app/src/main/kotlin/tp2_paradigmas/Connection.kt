@@ -8,9 +8,25 @@ public class Connection (
     private var buffer: Queue<Package>,
     private val bandWidth: UInt
 ) {
-    fun addToQueue(packageData: Package) = buffer.offer(packageData)
+    private var currentBandwidthUsage: UInt = 0u
+
+    fun addToBuffer(packet: Package) = buffer.offer(packet)
+    fun rmvToBuffer(packet: Package) = buffer.remove(packet)
+
+    fun getNextPackage() = buffer.first()
+    fun isEmptyBuffer() = buffer.isEmpty()
+    
+    fun updateBandwidthUsage(packageSize: UInt) { currentBandwidthUsage += packageSize }
+    fun getRemainingBandwidth() = bandWidth - currentBandwidthUsage
 
     fun getSource() = source
     fun getDestiny() = destiny
     fun getBandWidth() = bandWidth
+
+    fun printBuffer() {
+        print("Packages at buffer '${source.getIp()} -> ${destiny.getIp()}': ")
+        buffer.forEach { packet ->
+            println("${packet.getId()}")
+        }
+    }
 }
