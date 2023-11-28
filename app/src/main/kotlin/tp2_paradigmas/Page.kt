@@ -8,4 +8,8 @@ public class Page (
     fun getId() = id
     fun getSize() = size
     fun getContent() = content
+
+    fun printPage() {
+        println("Page [${id}] Size [${size}]")
+    }
 }

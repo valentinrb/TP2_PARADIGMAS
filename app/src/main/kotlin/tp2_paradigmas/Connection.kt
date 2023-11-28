@@ -16,12 +16,15 @@ public class Connection (
     fun getNextPackage() = buffer.first()
     fun isEmptyBuffer() = buffer.isEmpty()
     
-    fun updateBandwidthUsage(packageSize: UInt) { currentBandwidthUsage += packageSize }
+    fun addBandwidthUsage(packageSize: UInt) { currentBandwidthUsage += packageSize }
+    fun subBandwidthUsage(packageSize: UInt) { currentBandwidthUsage -= packageSize }
     fun getRemainingBandwidth() = bandWidth - currentBandwidthUsage
 
     fun getSource() = source
     fun getDestiny() = destiny
     fun getBandWidth() = bandWidth
+
+    fun getBufferQueueSize() = buffer.size
 
     fun printBuffer() {
         print("Packages at buffer '${source.getIp()} -> ${destiny.getIp()}': ")
