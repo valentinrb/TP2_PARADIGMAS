@@ -36,6 +36,11 @@ application {
     mainClass.set("tp2_paradigmas.SystemManager")
 }
 
+tasks.named<JavaExec>("run") {
+    // Configurar la entrada estándar para la tarea de ejecución
+    standardInput = System.`in`
+}
+
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()

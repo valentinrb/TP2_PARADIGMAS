@@ -26,19 +26,18 @@ public class Router (
             {
                 connection.addToBuffer(packet)
                 connection.addBandwidthUsage(packet.getSize())
-                println("Router [${ip}] Packet sent: ${packet.getId()} from: ${packet.getSource().getIp()} to: ${nextRouter.getIp()} | with destiny: ${packet.getDestiny().getIp()}")
+                println("Router [${ip}] - Packet sent ID[${packet.getId()}] from router [${packet.getSource().getIp()}] to router [${nextRouter.getIp()}] | with destiny router [${packet.getDestiny().getIp()}]")
             }
             else {
-                println("Router [${ip}] Connection [${connection.getSource().getIp()} -> ${connection.getDestiny().getIp()}] Buffer saturated - Remaining Bandwidth [${remainingBandwidth}].")
+                println("Router [${ip}] - Connection [${connection.getSource().getIp()} -> ${connection.getDestiny().getIp()}] Buffer saturated - Remaining Bandwidth [${remainingBandwidth}].")
             }
         } else {
-            println("Router [${ip}] No packages to send.")
+            println("Router [${ip}] - No packages to send.")
         }
     }
 
     fun receivePackages() {
         devices.filter { it.getDestiny() == this }.forEach { connection ->
-            //println("Router [${ip}] Connection [${connection.getSource().getIp()} -> ${connection.getDestiny().getIp()}]")
             if (connection.isEmptyBuffer())
             {
                 println("Router [${ip}] - Empty buffer.")
@@ -53,14 +52,14 @@ public class Router (
                 connection.rmvToBuffer(packet)
                 connection.subBandwidthUsage(packet.getSize())
 
-                println("Router [${ip}] - Packet stored: ${packet.getId()} from: ${packet.getSource().getIp()} with destiny: ${packet.getDestiny().getIp()}")
+                println("Router [${ip}] - Packet stored ID[${packet.getId()}] from router [${packet.getSource().getIp()}] with destiny router [${packet.getDestiny().getIp()}]")
                 
                 if(packet.getLastFlag())
                     managePageRebuild(packet.getPageId())
             }
             else
             {
-                println("Router [${ip}] - Packet buffered: ${packet.getId()} from: ${packet.getSource().getIp()} with destiny: ${packet.getDestiny().getIp()}")
+                println("Router [${ip}] - Packet buffered ID[${packet.getId()}] from router [${packet.getSource().getIp()}] with destiny router [${packet.getDestiny().getIp()}]")
 
                 internalBuffer.offer(packet)
                 connection.rmvToBuffer(packet)
@@ -70,7 +69,7 @@ public class Router (
     }
 
     fun createPackages(page: Page, destinationRouter: Router) {
-        val packageSize: UInt = 256u
+        val packageSize: UInt = (devices.first().getBandWidth() / 4u)
         val numPackages = Math.ceil(page.getSize().toDouble() / packageSize.toDouble()).toUInt()
     
         for (i in 1..numPackages.toInt()) {
@@ -81,7 +80,7 @@ public class Router (
         }
     }
 
-    fun managePageRebuild(pageId: UInt)
+    private fun managePageRebuild(pageId: UInt)
     {
         val packagesToReconstruct = packagesToStore.filter { it.getPageId() == pageId }
         
@@ -89,12 +88,12 @@ public class Router (
         
         val page = rebuildPage(packagesToReconstruct)
 
-        print("Router [${ip}] - Reconstruct page ")
+        print("Router [${ip}] - Reconstruct ")
 
         page.printPage()
     }
 
-    fun rebuildPage(packages: List<Package>): Page {        
+    private fun rebuildPage(packages: List<Package>): Page {        
         val totalSize = packages.sumOf { it.getSize() }
         val reconstructedContent = ByteArray(totalSize.toInt())
 

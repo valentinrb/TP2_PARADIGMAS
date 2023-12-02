@@ -1,16 +1,15 @@
 package tp2_paradigmas
 
 import kotlin.random.Random
+import kotlin.text.toInt
+import kotlin.text.toUInt
+import kotlin.text.toUIntOrNull
 import java.util.LinkedList
-
-const val NUM_PAGE_ROUTER = 20
-const val PAGE_SIZE = 2048u
-const val CYCLES = 12
-const val BAND_WIDTH = 1024u
+import java.util.Scanner
 
 enum class Task {
     RECEPTION,
-    SEND_STORE
+    SEND
 }
 
 public class SystemManager (
@@ -18,11 +17,15 @@ public class SystemManager (
     private var sites: MutableList<Page>
 ) {
     companion object {
+        private var nextPageId: UInt = 1u
+
         @JvmStatic
         fun main(args: Array<String>) {
-            val systemManager = SystemManager(generateRandomNetwork(NUM_PAGE_ROUTER), generateRandomPages(NUM_PAGE_ROUTER, PAGE_SIZE))            
+            val (numPageRouter, pageSize, cycles, bandWidth) = initSimulation()
+
+            val systemManager = SystemManager(generateRandomNetwork(numPageRouter, bandWidth), generateRandomPages(numPageRouter, pageSize))            
             
-            //systemManager.printPages()
+            systemManager.printPages()
             systemManager.network.printNetwork()
             
             systemManager.initTransmission()
@@ -30,29 +33,28 @@ public class SystemManager (
 
             //systemManager.network.printPathList()
 
-            val cycles = CYCLES
-            var task = Task.SEND_STORE
+            var task = Task.SEND
 
-            for (cicle in 1..cycles) {
+            for (cicle in 1..cycles.toInt()) {
                 println("--- Cicle $cicle - Task: $task ---")
 
                 systemManager.network.getRouters().forEach { router ->
                     when (task) {
-                        Task.SEND_STORE -> router.sendPackages(systemManager.network.getPathList())
+                        Task.SEND -> router.sendPackages(systemManager.network.getPathList())
                         Task.RECEPTION -> router.receivePackages()
                     }
                 }
 
                 task = when (task) {
-                    Task.RECEPTION -> Task.SEND_STORE
-                    Task.SEND_STORE -> Task.RECEPTION
+                    Task.RECEPTION -> Task.SEND
+                    Task.SEND -> Task.RECEPTION
                 }
                 
                 if (cicle % 12 == 0) {
                     println("--- Generating more pages ---")
 
-                    systemManager.sites.addAll(generateRandomPages(20, 2048u))
-                    //systemManager.printPages()
+                    systemManager.sites.addAll(generateRandomPages(numPageRouter, pageSize))
+                    systemManager.printPages()
 
                     systemManager.initTransmission()
                     systemManager.setPath()
@@ -62,21 +64,19 @@ public class SystemManager (
                     println("--- Recomputing optimal paths ---")
                     
                     systemManager.setPath()           
-                    //systemManager.network.printPathList()
                 }
                 
                 Thread.sleep(500)
             }
         }
 
-        private fun generateRandomNetwork(routerCount: Int): NetworkManager {
+        private fun generateRandomNetwork(routerCount: UInt, bandwidth: UInt): NetworkManager {
             val routers = (1u..routerCount.toUInt()).map { Router(it, mutableListOf(), LinkedList()) }
             val connections = mutableListOf<Connection>()
         
             for (i in routers.indices) {
                 val sourceRouter = routers[i]
                 val destinyRouter = if (i == routers.size - 1) routers[0] else routers[i + 1]
-                val bandwidth = BAND_WIDTH
                 val connection = Connection(sourceRouter, destinyRouter, LinkedList(), bandwidth)
         
                 sourceRouter.setConnection(connection)
@@ -88,7 +88,6 @@ public class SystemManager (
                 val remainingRouters = routers.filter { it != router && it !in router.getConnections().map { it.getDestiny() } }
                 if (remainingRouters.isNotEmpty()) {
                     val randomDestiny = remainingRouters.random()
-                    val bandwidth = BAND_WIDTH
                     val connection = Connection(router, randomDestiny, LinkedList(), bandwidth)
         
                     router.setConnection(connection)
@@ -100,16 +99,36 @@ public class SystemManager (
             return NetworkManager(routers, connections, mutableListOf())
         }
         
-        private fun generateRandomPages(quantity: Int, size: UInt): MutableList<Page> {
-            return MutableList(quantity) { id ->
-                val content = generateRandomContent(size)
-                Page((id + 1).toUInt(), content.size.toUInt(), content)
-            }
+        private fun generateRandomPages(quantity: UInt, size: UInt): MutableList<Page> {
+            val newPages = MutableList(quantity.toInt()) {
+            val content = generateRandomContent(size)
+            Page(nextPageId++, content.size.toUInt(), content)
+        }
+
+        return newPages
         }
 
         private fun generateRandomContent(size: UInt): ByteArray {
             val contentSize = Random.nextInt(1, size.toInt() + 1)
             return ByteArray(contentSize) { Random.nextInt(256).toByte() }
+        }
+
+        private fun initSimulation(): List<UInt> {
+            println("Inicializando la simulacion de red. Por favor, ingrese los siguientes parametros:")
+
+            println("--- Numero de routers y paginas ---")
+            val numPageRouter = readLine()?.toUInt() ?: 0u
+
+            println("--- Tamano de la pagina ---")
+            val pageSize = readLine()?.toUInt() ?: 0u
+
+            println("--- Ancho de banda ---")
+            val bandWidth = readLine()?.toUInt() ?: 0u
+
+            println("--- Numero de ciclos ---")
+            val cycles = readLine()?.toUInt() ?: 0u
+
+            return listOf(numPageRouter, pageSize.toUInt(), cycles.toUInt(), bandWidth.toUInt())
         }
     }
 
@@ -134,20 +153,6 @@ public class SystemManager (
             }
         }
     }
-    /* 
-    private fun setPath() {
-        //network.clearPathList()
-
-        network.getRouters().forEach { sourceRouter ->
-            val destinyRouters = getDestinyRouters(sourceRouter)
-
-            destinyRouters.forEach { destinyRouter ->
-                val path = network.findShortestPath(sourceRouter, destinyRouter)
-
-                network.setPathList(path)
-            }
-        }
-    }*/
 
     private fun getDestinyRouters(router: Router): MutableList<Router> {
         val destinyRouters = mutableListOf<Router>()

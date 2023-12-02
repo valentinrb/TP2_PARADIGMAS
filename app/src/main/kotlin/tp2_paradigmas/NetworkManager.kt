@@ -13,8 +13,6 @@ public class NetworkManager (
         while (sourceRouter == destRouter)
             destRouter = routers.random()
 
-        //println("Page ${page.getId()} - SourceRouter ${sourceRouter.getIp()}")
-
         sourceRouter.createPackages(page, destRouter)
     }
 
@@ -58,47 +56,7 @@ public class NetworkManager (
         return bufferQueueSize.toUInt() / bandwidth
     }
     
-    /*
-    fun findShortestPath(sourceRouter: Router, destinationRouter: Router): Path {
-        val distances = HashMap<Router, UInt>()
-        val visited = HashSet<Router>()
-        val queue = PriorityQueue<Router>(compareBy { distances.getOrDefault(it, UInt.MAX_VALUE) })
-        val previous = HashMap<Router, Router?>()
-    
-        distances[sourceRouter] = 0u
-        queue.offer(sourceRouter)
-    
-        while (queue.isNotEmpty()) {
-            val currentRouter = queue.poll()
-    
-            if (currentRouter == destinationRouter)
-                return buildPath(destinationRouter, previous, sourceRouter)
-    
-            if (visited.contains(currentRouter)) continue
-    
-            visited.add(currentRouter)
-    
-            for (connection in currentRouter.getConnections()) {
-                val neighbor = connection.getDestiny()
-                val bandwidth = connection.getBandWidth()
-                val newDistance = distances.getOrDefault(currentRouter, UInt.MAX_VALUE) + bandwidth
-    
-                if (newDistance < distances.getOrDefault(neighbor, UInt.MAX_VALUE)) {
-                    distances[neighbor] = newDistance
-                    previous[neighbor] = currentRouter
-                    queue.offer(neighbor)
-                }
-            }
-        }
-    
-        throw NoSuchElementException("No se encontró un camino entre $sourceRouter y $destinationRouter")
-    } */
-    
-    private fun buildPath(
-        destination: Router,
-        previous: HashMap<Router, Router?>,
-        sourceRouter: Router
-    ): Path {
+    private fun buildPath(destination: Router, previous: HashMap<Router, Router?>, sourceRouter: Router): Path {
         val path = mutableListOf<Router>()
         var current: Router? = destination
     
